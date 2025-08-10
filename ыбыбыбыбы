@@ -1,4 +1,3 @@
-
 while wait(0.5) do
     for i, childrik in ipairs(workspace:GetDescendants()) do
         if childrik:FindFirstChild("Humanoid") then
@@ -17,4 +16,5 @@ while wait(0.5) do
         end
     end
 end
+
 
