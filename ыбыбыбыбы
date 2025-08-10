@@ -1,0 +1,13 @@
+game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 100
+warn(WalkSpeed)       
+game.Players.LocalPlayer.Character.Humanoid.JumpPower = 100
+warn(JumpPower)
+
+while wait() do 
+for i,v in pairs(game:GetDescendants()) do
+if v.Name == 'Credit' then
+wait(0.2)
+v.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+end
+end
+end
