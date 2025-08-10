@@ -1,25 +1,194 @@
-while wait(0.5) do
-    for i, childrik in ipairs(workspace:GetDescendants()) do
-        if childrik:FindFirstChild("Humanoid") then
-            if not childrik:FindFirstChild("EspBox") then
-                if childrik ~= game.Players.LocalPlayer.Character then
-                    local esp = Instance.new("BoxHandleAdornment",childrik)
-                    esp.Adornee = childrik
-                    esp.ZIndex = 0
-                    esp.Size = Vector3.new(4, 5, 1)
-                    esp.Transparency = 0.65
-                    esp.Color3 = Color3.fromRGB(255,48,48)
-                    esp.AlwaysOnTop = true
-                    esp.Name = "EspBox"
-                end
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Robojini/Tuturial_UI_Library/main/UI_Template_1"))()
+local Window = Library.CreateLib("PahTeT Hub v.2", "RJTheme6")
+
+-- 🏃 Speed & Jump
+local Tab1 = Window:NewTab("Speed|Jump")
+local Section1 = Tab1:NewSection("Speed|Jump")
+
+Section1:NewSlider("SpeedHack", "Изменяет WalkSpeed", 500, 16, function(s)
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = s
+end)
+
+Section1:NewSlider("JumpPower", "Изменяет JumpPower", 500, 16, function(s)
+    game.Players.LocalPlayer.Character.Humanoid.JumpPower = s
+end)
+
+-- 👁️ WallHack
+local Tab2 = Window:NewTab("Visuals")
+local Section2 = Tab2:NewSection("WH|ColorWH")
+
+Section2:NewToggle("WallHack", "Видимость игроков сквозь стены", function(state)
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local RunService = game:GetService("RunService")
+    local highlights = {}
+    local highlightColor = Color3.fromRGB(255, 0, 0)
+    local transparency = 0.5
+
+    _G.WallHackEnabled = state
+
+    local function applyHighlight(player)
+        if player.Character then
+            if highlights[player] then
+                highlights[player].Adornee = player.Character
+            else
+                local highlight = Instance.new("Highlight")
+                highlight.Adornee = player.Character
+                highlight.FillColor = highlightColor
+                highlight.FillTransparency = transparency
+                highlight.OutlineTransparency = 1
+                highlight.Parent = game.CoreGui
+                highlights[player] = highlight
             end
         end
     end
-end
 
-game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 75
-      
-game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
+    local function clearHighlights()
+        for _, h in pairs(highlights) do
+            h:Destroy()
+        end
+        highlights = {}
+    end
 
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            player.CharacterAdded:Connect(function()
+                if _G.WallHackEnabled then
+                    applyHighlight(player)
+                end
+            end)
+        end
+    end
+
+    RunService.RenderStepped:Connect(function()
+        if _G.WallHackEnabled then
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer then
+                    applyHighlight(player)
+                end
+            end
+        else
+            clearHighlights()
+        end
+    end)
+
+    Players.PlayerRemoving:Connect(function(player)
+        if highlights[player] then
+            highlights[player]:Destroy()
+            highlights[player] = nil
+        end
+    end)
+end)
+
+-- 🎯 Aimbot
+local Tab3 = Window:NewTab("Combat")
+local Section3 = Tab3:NewSection("Aim|FOV")
+
+Section3:NewToggle("Aimbot", "ПКМ аим с FOV", function(state)
+    if state then
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+        local RunService = game:GetService("RunService")
+        local UserInputService = game:GetService("UserInputService")
+        local Camera = workspace.CurrentCamera
+
+        getgenv().AimbotEnabled = true
+        getgenv().Aiming = false
+
+        local Settings = {
+            AimPart = "Head",
+            TeamCheck = true,
+            FOVRadius = 100,
+            FOVColor = Color3.fromRGB(255, 255, 255),
+            FOVThickness = 2
+        }
+
+        local FOVCircle = Drawing.new("Circle")
+        FOVCircle.Visible = true
+        FOVCircle.Radius = Settings.FOVRadius
+        FOVCircle.Color = Settings.FOVColor
+        FOVCircle.Thickness = Settings.FOVThickness
+        FOVCircle.Filled = false
+        FOVCircle.Transparency = 1
+        getgenv().FOVCircle = FOVCircle
+
+        getgenv().MouseDownConnection = UserInputService.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton2 then
+                getgenv().Aiming = true
+            end
+        end)
+
+        getgenv().MouseUpConnection = UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton2 then
+                getgenv().Aiming = false
+            end
+        end)
+
+        getgenv().AimbotConnection = RunService.RenderStepped:Connect(function()
+            local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+            FOVCircle.Position = screenCenter
+
+            if not getgenv().AimbotEnabled or not getgenv().Aiming then return end
+
+            local closestPart = nil
+            local shortestDistance = Settings.FOVRadius
+
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(Settings.AimPart) then
+                    if Settings.TeamCheck and player.Team == LocalPlayer.Team then continue end
+
+                    local targetPart = player.Character[Settings.AimPart]
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+
+                    if onScreen then
+                        local distance = (screenCenter - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+                        if distance < shortestDistance then
+                            shortestDistance = distance
+                            closestPart = targetPart
+                        end
+                    end
+                end
+            end
+
+            if closestPart then
+                Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, closestPart.Position)
+            end
+        end)
+    else
+        if getgenv().AimbotCleanup then
+            getgenv().AimbotCleanup()
+        end
+
+        getgenv().AimbotCleanup = function()
+            if getgenv().AimbotConnection then
+                getgenv().AimbotConnection:Disconnect()
+                getgenv().AimbotConnection = nil
+            end
+            if getgenv().MouseDownConnection then
+                getgenv().MouseDownConnection:Disconnect()
+                getgenv().MouseDownConnection = nil
+            end
+            if getgenv().MouseUpConnection then
+                getgenv().MouseUpConnection:Disconnect()
+                getgenv().MouseUpConnection = nil
+            end
+            if getgenv().FOVCircle then
+                getgenv().FOVCircle:Remove()
+                getgenv().FOVCircle = nil
+            end
+            getgenv().AimbotEnabled = false
+            getgenv().Aiming = false
+        end
+
+        getgenv().AimbotCleanup()
+    end
+end)
+local UserInputService = game:GetService("UserInputService")
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.RightShift and not gameProcessed then
+        Library:ToggleUI()
+    end
+end)
 
 
