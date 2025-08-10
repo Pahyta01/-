@@ -2,6 +2,8 @@ game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 100
 warn(WalkSpeed)       
 game.Players.LocalPlayer.Character.Humanoid.JumpPower = 100
 warn(JumpPower)
+end
+end
 while wait(0.5) do
     for i, childrik in ipairs(workspace:GetDescendants()) do
         if childrik:FindFirstChild("Humanoid") then
