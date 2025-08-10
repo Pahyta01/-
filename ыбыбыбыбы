@@ -17,4 +17,9 @@ while wait(0.5) do
     end
 end
 
+game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 75
+      
+game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
+
+
 
